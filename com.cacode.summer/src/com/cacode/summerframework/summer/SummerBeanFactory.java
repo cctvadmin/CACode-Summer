@@ -1,7 +1,6 @@
 package com.cacode.summerframework.summer;
 
 import com.cacode.beanutil.maintool.BeanUtil;
-import com.cacode.jdbcutil.JdbcUtil;
 import com.cacode.summerframework.annotation.classannotations.Entity;
 import com.cacode.summerframework.annotation.fieldannotations.Param;
 import com.cacode.summerframework.annotation.methodannotations.Delete;
@@ -14,6 +13,7 @@ import com.cacode.summerframework.summer.util.Map;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -44,11 +44,11 @@ public class SummerBeanFactory implements InvocationHandler {
     public SummerBeanFactory(Class<?> proxyInterface, Class<?> prop) {
         this.proxyInterface = proxyInterface;
         try {
-            this.prop = (SummerProp) prop.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            Constructor<?> constructor = prop.getConstructor();
+            this.prop = (SummerProp) constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             e.printStackTrace();
         }
-        ClassLoader classLoader = proxyInterface.getClassLoader();
         this.bean = Proxy.newProxyInstance(proxyInterface.getClassLoader(), new Class[]{proxyInterface}, this);
     }
 
@@ -59,8 +59,9 @@ public class SummerBeanFactory implements InvocationHandler {
      */
     public SummerBeanFactory(Class<?> prop) {
         try {
-            this.prop = (SummerProp) prop.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            Constructor<?> constructor = prop.getConstructor();
+            this.prop = (SummerProp) constructor.newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -112,14 +113,26 @@ public class SummerBeanFactory implements InvocationHandler {
                 parse.sort(map);
                 List<Object> argsValue = parse.getArgsValue();
 
-                JdbcUtil jdbcUtil = new JdbcUtil(prop.prop(new Map<>()));
+                Class<?> jdbcUtil_Class = Class.forName("com.cacode.jdbcutil.JdbcUtil");
+
+                Constructor<?> constructor = jdbcUtil_Class.getConstructor(java.util.Map.class);
+                Object jdbcUtil = constructor.newInstance(prop.prop(new Map<>()));
+//                JdbcUtil jdbcUtil = new JdbcUtil(prop.prop(new Map<>()));
+                BeanUtil jdbcBean = new BeanUtil(jdbcUtil);
                 String replaceStr = parse.getReplaceStr();
                 Object[] objects = argsValue.toArray(new Object[]{});
                 List<List<Object>> list = null;
                 if (isSelect) {
-                    list = jdbcUtil.readAll(replaceStr, objects);
+                    Method readAll = jdbcBean.selectMethod("readAll", String.class, Object[].class);
+                    list = Collections.unmodifiableList(
+                            (List<List<Object>>) readAll.invoke(
+                                    jdbcUtil,
+                                    replaceStr,
+                                    objects)
+                    );
                 } else {
-                    re = jdbcUtil.update(replaceStr, objects);
+                    Method update = jdbcBean.selectMethod("update", String.class, Object[].class);
+                    re = update.invoke(jdbcUtil, replaceStr, objects);
                 }
                 switch (returnType.getName()) {
                     case "java.lang.String":
@@ -137,6 +150,7 @@ public class SummerBeanFactory implements InvocationHandler {
                                     break;
                                 }
                             }
+                            //没做
                             if (isEntity) {
                                 BeanUtil beanUtil = new BeanUtil(returnType);
                                 Field[] fields = beanUtil.getFields();
