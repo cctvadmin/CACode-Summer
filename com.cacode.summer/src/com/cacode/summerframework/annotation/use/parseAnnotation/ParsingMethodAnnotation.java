@@ -12,7 +12,7 @@ import com.cacode.summerframework.summer.util.Map;
  */
 public class ParsingMethodAnnotation {
     /**
-     * 原sql语句
+     * 原hillside语句
      */
     private String str;
     /**
@@ -28,18 +28,30 @@ public class ParsingMethodAnnotation {
      */
     private String replaceStr;
 
+    /**
+     * @return 获取解析之后的所有字段d的值
+     */
     public List<Object> getArgsValue() {
         return argsValue;
     }
 
+    /**
+     * @return 获取解析之后的所有字段
+     */
     public List<String> getArgs() {
         return args;
     }
 
+    /**
+     * @return 获取解析之后的sql语句
+     */
     public String getReplaceStr() {
         return replaceStr;
     }
 
+    /**
+     * @param str 传入需要解析的hillside
+     */
     public ParsingMethodAnnotation(String str) {
         this.args = this.getArgs(str);
     }
