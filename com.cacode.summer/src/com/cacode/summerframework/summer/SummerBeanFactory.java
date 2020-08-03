@@ -27,7 +27,7 @@ import java.util.Objects;
 public class SummerBeanFactory implements InvocationHandler {
 
     private Class<?> proxyInterface = null;
-    //这里可以维护一个缓存，存这个接口的方法抽象的对象
+    // 这里可以维护一个缓存，存这个接口的方法抽象的对象
     /**
      * 指向配置参考类
      */
@@ -46,10 +46,11 @@ public class SummerBeanFactory implements InvocationHandler {
         try {
             Constructor<?> constructor = prop.getConstructor();
             this.prop = (SummerProp) constructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
+                | InvocationTargetException e) {
             e.printStackTrace();
         }
-        this.bean = Proxy.newProxyInstance(proxyInterface.getClassLoader(), new Class[]{proxyInterface}, this);
+        this.bean = Proxy.newProxyInstance(proxyInterface.getClassLoader(), new Class[] { proxyInterface }, this);
     }
 
     /**
@@ -61,7 +62,8 @@ public class SummerBeanFactory implements InvocationHandler {
         try {
             Constructor<?> constructor = prop.getConstructor();
             this.prop = (SummerProp) constructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
+                | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -71,26 +73,26 @@ public class SummerBeanFactory implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        //切入
+        // 切入
         this.prop.before();
         Object re = null;
-        //相同方法名String sql(),使用BeanUtil统一生成
+        // 相同方法名String sql(),使用BeanUtil统一生成
         BeanUtil bean = null;
-        //是否为查询语句
+        // 是否为查询语句
         boolean isSelect = false;
-        //获取注解
+        // 获取注解
         Annotation[] annotations = method.getAnnotations();
-        //获取形参
+        // 获取形参
         Parameter[] parameters = method.getParameters();
-        //获取方法的返回值
+        // 获取方法的返回值
         Class<?> returnType = method.getReturnType();
-        //设置字段对应值
+        // 设置字段对应值
         Map<String, Object> map = new Map<>();
         int index = 0;
         for (Parameter item : parameters) {
             map.put(item.getAnnotation(Param.class).name(), args[index++]);
         }
-        //判断sql类型以及解析
+        // 判断sql类型以及解析
         for (Annotation item : annotations) {
             if (item.annotationType().equals(Insert.class)) {
                 bean = new BeanUtil(method.getAnnotation(Insert.class));
@@ -105,11 +107,11 @@ public class SummerBeanFactory implements InvocationHandler {
             if (bean != null) {
                 Method sql = bean.selectMethod("sql");
                 String sqlStr = (String) sql.invoke(bean.getaObj());
-                //解析sql语句
+                // 解析sql语句
                 ParsingMethodAnnotation parse = new ParsingMethodAnnotation(sqlStr);
-                //获取解析残留字段
+                // 获取解析残留字段
                 List<String> strArgs = parse.getArgs();
-                //排序后或取与字段对应的值
+                // 排序后或取与字段对应的值
                 parse.sort(map);
                 List<Object> argsValue = parse.getArgsValue();
 
@@ -117,19 +119,15 @@ public class SummerBeanFactory implements InvocationHandler {
 
                 Constructor<?> constructor = jdbcUtil_Class.getConstructor(java.util.Map.class);
                 Object jdbcUtil = constructor.newInstance(prop.prop(new Map<>()));
-//                JdbcUtil jdbcUtil = new JdbcUtil(prop.prop(new Map<>()));
+                // JdbcUtil jdbcUtil = new JdbcUtil(prop.prop(new Map<>()));
                 BeanUtil jdbcBean = new BeanUtil(jdbcUtil);
                 String replaceStr = parse.getReplaceStr();
-                Object[] objects = argsValue.toArray(new Object[]{});
+                Object[] objects = argsValue.toArray(new Object[] {});
                 List<List<Object>> list = null;
                 if (isSelect) {
                     Method readAll = jdbcBean.selectMethod("readAll", String.class, Object[].class);
-                    list = Collections.unmodifiableList(
-                            (List<List<Object>>) readAll.invoke(
-                                    jdbcUtil,
-                                    replaceStr,
-                                    objects)
-                    );
+                    list = Collections
+                            .unmodifiableList((List<List<Object>>) readAll.invoke(jdbcUtil, replaceStr, objects));
                 } else {
                     Method update = jdbcBean.selectMethod("update", String.class, Object[].class);
                     re = update.invoke(jdbcUtil, replaceStr, objects);
@@ -150,7 +148,7 @@ public class SummerBeanFactory implements InvocationHandler {
                                     break;
                                 }
                             }
-                            //没做
+                            // 没做
                             if (isEntity) {
                                 BeanUtil beanUtil = new BeanUtil(returnType);
                                 Field[] fields = beanUtil.getFields();
@@ -167,7 +165,7 @@ public class SummerBeanFactory implements InvocationHandler {
                 }
             }
         }
-        //切出
+        // 切出
         this.prop.after();
         return re;
     }
@@ -190,9 +188,11 @@ public class SummerBeanFactory implements InvocationHandler {
     public Object getBean(Class<?> proxyInterface) {
         SummerBeanFactory summerBeanFactory = null;
         try {
-            Constructor<? extends SummerBeanFactory> constructor = SummerBeanFactory.class.getConstructor(Class.class, Class.class);
+            Constructor<? extends SummerBeanFactory> constructor = SummerBeanFactory.class.getConstructor(Class.class,
+                    Class.class);
             summerBeanFactory = constructor.newInstance(proxyInterface, this.prop.getClass());
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+                | InvocationTargetException e) {
             e.printStackTrace();
         }
         return Objects.requireNonNull(summerBeanFactory).getBean();
