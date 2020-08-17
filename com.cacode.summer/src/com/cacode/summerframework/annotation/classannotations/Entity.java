@@ -14,4 +14,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Entity {
+    /**
+     * 对应表名
+     *
+     * @return 表名
+     */
+    String tabName();
 }

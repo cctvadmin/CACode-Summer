@@ -109,4 +109,13 @@ public class ParsingMethodAnnotation {
             this.argsValue.add(map.get(item));
         }
     }
+
+
+    public String getStr() {
+        return str;
+    }
+
+    public void setStr(String str) {
+        this.str = str;
+    }
 }

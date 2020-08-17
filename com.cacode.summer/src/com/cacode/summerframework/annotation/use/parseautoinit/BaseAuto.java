@@ -26,7 +26,7 @@ import java.util.List;
  * @date 2020/7/14 16:32
  */
 public abstract class BaseAuto {
-    private final Object thisSon = getThisSon();
+    private final Object thisSon = returnObj();
     private BeanUtil beanUtil;
 
     public BaseAuto() {
@@ -46,7 +46,7 @@ public abstract class BaseAuto {
      *
      * @return 当前子类
      */
-    public abstract Object getThisSon();
+    public abstract Object returnObj();
 
     /**
      * 初始化
